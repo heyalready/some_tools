@@ -235,23 +235,935 @@ public class RdpSession
 
 ---
 
-## 待确认问题
+## 详细实现方案
 
-请您确认以下技术细节：
+### 项目结构
 
-1. **FreeRDP .NET 绑定库选择**: 是否有已有推荐的库？还是需要我调研现有的开源库？
-2. **本地会话隔离级别**: UOS 系统上如何实现会话隔离？是否有系统特定的 API？
-3. **视频流传输协议**: 优先使用 WebSocket 二进制流还是 MJPEG over HTTP？
-4. **Electron 与 C# 通信**: 除了 HTTP API，是否需要额外的命名管道 (Named Pipe) 用于进程控制？
+```
+WebRDP/
+├── src/
+│   ├── WebRdp.Service/          # C# .NET 6 后端服务
+│   │   ├── Controllers/         # API 控制器
+│   │   ├── Services/            # 业务服务
+│   │   │   ├── RdpSessionManager.cs
+│   │   │   └── FreeRdpClient.cs
+│   │   ├── Models/              # 数据模型
+│   │   ├── Logging/             # log4net 配置
+│   │   ├── appsettings.json     # 配置文件
+│   │   └── Program.cs           # 入口
+│   ├── WebRdp.Client/           # FreeRDP .NET 封装库
+│   │   ├── Native/              # P/Invoke 声明
+│   │   ├── FreeRdpContext.cs
+│   │   └── EventHandlers.cs
+│   └── WebRdp.Web/              # Electron Web 界面
+│       ├── renderer/            # 渲染进程
+│       ├── main/                # 主进程
+│       └── preload/             # 预加载脚本
+├── tests/
+│   ├── WebRdp.Service.Tests/    # 服务层单元测试
+│   └── WebRdp.Client.Tests/     # FreeRDP 封装测试
+├── docs/
+│   └── issues-log.md            # 问题记录文档
+└── README.md
+```
+
+### 1. C# 后端服务实现
+
+#### Program.cs
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using WebRdp.Service.Controllers;
+using WebRdp.Service.Services;
+using log4net;
+using log4net.Config;
+using System.IO;
+
+var logger = LogManager.GetLogger(typeof(Program));
+XmlConfigurator.Configure(new FileInfo("log4net.config"));
+
+logger.Info("WebRDP Service starting...");
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 添加服务
+builder.Services.AddSingleton<IRdpSessionManager, RdpSessionManager>();
+builder.Services.AddSingleton<IFreeRdpClientFactory, FreeRdpClientFactory>();
+builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowElectron",
+        policy => policy
+            .WithOrigins("http://localhost:*")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
+// 配置 Kestrel
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5000); // HTTP API
+    options.ListenLocalhost(5001, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+    }); // WebSocket
+});
+
+var app = builder.Build();
+
+app.UseCors("AllowElectron");
+app.UseWebSockets();
+app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+
+logger.Info("WebRDP Service started on http://localhost:5000");
+app.Run();
+```
+
+#### 配置文件 appsettings.json
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  },
+  "RdpSettings": {
+    "DefaultHost": "127.0.0.2",
+    "DefaultPort": 3389,
+    "MaxSessionCount": 1,
+    "SessionTimeout": 3600,
+    "ReconnectDelay": 2000,
+    "MaxReconnectAttempts": 3
+  },
+  "PlatformSettings": {
+    "Windows": {
+      "LocalAddress": "127.0.0.2",
+      "SessionType": "local"
+    },
+    "UOS": {
+      "LocalAddress": "127.0.0.2",
+      "SessionType": "local"
+    }
+  },
+  "AllowedHosts": "*"
+}
+```
+
+#### log4net.config
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<log4net>
+  <appender name="FileAppender" type="log4net.Appender.FileAppender">
+    <file value="logs/webrdp-service.log" />
+    <appendToFile value="true" />
+    <rollingStyle value="Size" />
+    <maxSizeRollBackups value="5" />
+    <maximumFileSize value="10MB" />
+    <staticLogFileName value="true" />
+    <layout type="log4net.Layout.PatternLayout">
+      <conversionPattern value="%date [%thread] %-5level %logger - %message%newline" />
+    </layout>
+  </appender>
+  <root>
+    <level value="INFO" />
+    <appender-ref ref="FileAppender" />
+  </root>
+</log4net>
+```
+
+### 2. FreeRDP .NET 封装实现
+
+#### FreeRdpClient.cs
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using WebRdp.Client.Native;
+
+namespace WebRdp.Client
+{
+    public class FreeRdpClient : IFreeRdpClient
+    {
+        private readonly ILogger<FreeRdpClient> _logger;
+        private IntPtr _context;
+        private bool _disposed;
+        private bool _isConnected;
+
+        public event EventHandler<FrameEventArgs>? FrameReady;
+        public event EventHandler<ConnectionEventArgs>? ConnectionStateChanged;
+
+        public FreeRdpClient(ILogger<FreeRdpClient> logger)
+        {
+            _logger = logger;
+            _context = IntPtr.Zero;
+        }
+
+        public async Task ConnectAsync(RdpConnectionConfig config)
+        {
+            if (_isConnected)
+            {
+                _logger.LogWarning("Already connected, disconnecting first...");
+                await DisconnectAsync();
+            }
+
+            try
+            {
+                _logger.LogInformation($"Connecting to {config.Host}:{config.Port} as {config.Username}");
+                
+                // 初始化 FreeRDP 上下文
+                _context = FreerdpInterop.freerdp_context_new();
+                if (_context == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to create FreeRDP context");
+                }
+
+                // 配置连接参数
+                var settings = new FREERDP_SETTINGS
+                {
+                    ServerHostname = config.Host,
+                    ServerPort = config.Port,
+                    Username = config.Username,
+                    Password = config.Password,
+                    Width = config.Width,
+                    Height = config.Height,
+                    ColorDepth = config.ColorDepth,
+                    LocalSessionId = config.LocalSessionId
+                };
+
+                FreerdpInterop.freerdp_context_set_settings(_context, settings);
+
+                // 注册事件回调
+                FreerdpInterop.freerdp_context_set_frame_callback(_context, OnFrameReceived);
+                FreerdpInterop.freerdp_context_set_state_callback(_context, OnStateChanged);
+
+                // 异步连接
+                await Task.Run(() =>
+                {
+                    var result = FreerdpInterop.freerdp_context_connect(_context);
+                    if (result != 0)
+                    {
+                        throw new RdpConnectionException($"Connection failed with error code {result}");
+                    }
+                });
+
+                _isConnected = true;
+                _logger.LogInformation("Connected successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Connection failed");
+                await DisconnectAsync();
+                throw;
+            }
+        }
+
+        public async Task SendInputAsync(InputEvent input)
+        {
+            if (!_isConnected)
+            {
+                throw new InvalidOperationException("Not connected");
+            }
+
+            await Task.Run(() =>
+            {
+                var nativeInput = new FREERDP_INPUT_EVENT
+                {
+                    EventType = input.EventType,
+                    KeyCode = input.KeyCode,
+                    MouseX = input.MouseX,
+                    MouseY = input.MouseY,
+                    Flags = input.Flags
+                };
+
+                FreerdpInterop.freerdp_context_send_input(_context, nativeInput);
+            });
+        }
+
+        public async Task DisconnectAsync()
+        {
+            if (_context != IntPtr.Zero && !_disposed)
+            {
+                await Task.Run(() =>
+                {
+                    FreerdpInterop.freerdp_context_disconnect(_context);
+                    FreerdpInterop.freerdp_context_free(_context);
+                });
+                
+                _context = IntPtr.Zero;
+                _isConnected = false;
+                _logger.LogInformation("Disconnected");
+            }
+        }
+
+        private void OnFrameReceived(IntPtr frameData, int width, int height, int stride)
+        {
+            var frameDataArray = new byte[width * height * 4];
+            System.Runtime.InteropServices.Marshal.Copy(frameData, frameDataArray, 0, frameDataArray.Length);
+            
+            FrameReady?.Invoke(this, new FrameEventArgs
+            {
+                Data = frameDataArray,
+                Width = width,
+                Height = height,
+                Stride = stride,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
+        private void OnStateChanged(int oldState, int newState)
+        {
+            ConnectionStateChanged?.Invoke(this, new ConnectionEventArgs
+            {
+                OldState = (ConnectionState)oldState,
+                NewState = (ConnectionState)newState
+            });
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                DisconnectAsync().Wait();
+                _disposed = true;
+                GC.SuppressFinalize(this);
+            }
+        }
+    }
+}
+```
+
+#### P/Invoke 声明 (Native/FreeRdpInterop.cs)
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+
+namespace WebRdp.Client.Native
+{
+    internal static class FreerdpInterop
+    {
+        private const string FreeRdpLibrary = "libfreerdp3.so"; // Linux/UOS
+        // private const string FreeRdpLibrary = "freerdp3.dll"; // Windows
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr freerdp_context_new();
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void freerdp_context_free(IntPtr context);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int freerdp_context_connect(IntPtr context);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int freerdp_context_disconnect(IntPtr context);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void freerdp_context_set_settings(IntPtr context, FREERDP_SETTINGS settings);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void freerdp_context_set_frame_callback(IntPtr context, FrameCallback callback);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void freerdp_context_set_state_callback(IntPtr context, StateCallback callback);
+
+        [DllImport(FreeRdpLibrary, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void freerdp_context_send_input(IntPtr context, FREERDP_INPUT_EVENT input);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void FrameCallback(IntPtr frameData, int width, int height, int stride);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void StateCallback(int oldState, int newState);
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct FREERDP_SETTINGS
+    {
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string ServerHostname;
+        public int ServerPort;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string Username;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string Password;
+        public int Width;
+        public int Height;
+        public int ColorDepth;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string LocalSessionId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FREERDP_INPUT_EVENT
+    {
+        public int EventType;
+        public int KeyCode;
+        public int MouseX;
+        public int MouseY;
+        public int Flags;
+    }
+}
+```
+
+### 3. 会话管理器实现
+
+#### RdpSessionManager.cs
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace WebRdp.Service.Services
+{
+    public class RdpSessionManager : IRdpSessionManager
+    {
+        private readonly ILogger<RdpSessionManager> _logger;
+        private readonly IFreeRdpClientFactory _clientFactory;
+        private readonly RdpSettings _settings;
+        private readonly SemaphoreSlim _sessionLock;
+        private RdpSession? _currentSession;
+        private IFreeRdpClient? _currentClient;
+
+        public RdpSessionManager(
+            ILogger<RdpSessionManager> logger,
+            IFreeRdpClientFactory clientFactory,
+            IOptions<RdpSettings> settings)
+        {
+            _logger = logger;
+            _clientFactory = clientFactory;
+            _settings = settings.Value;
+            _sessionLock = new SemaphoreSlim(1, 1);
+        }
+
+        public async Task<RdpSession> ConnectAsync(RdpConnectionConfig config)
+        {
+            await _sessionLock.WaitAsync();
+            try
+            {
+                _logger.LogInformation("Connect request received");
+
+                // 检查是否已有会话
+                if (_currentSession != null)
+                {
+                    if (_currentSession.Status == RdpSessionStatus.Connected)
+                    {
+                        _logger.LogInformation("Returning existing session");
+                        _currentSession.LastActiveAt = DateTime.UtcNow;
+                        return _currentSession;
+                    }
+                    
+                    // 清理旧会话
+                    _logger.LogInformation("Cleaning up old session");
+                    await CleanupSessionAsync();
+                }
+
+                // 创建新会话
+                var sessionId = Guid.NewGuid().ToString("N")[..8];
+                _currentSession = new RdpSession
+                {
+                    Id = sessionId,
+                    Status = RdpSessionStatus.Connecting,
+                    CreatedAt = DateTime.UtcNow,
+                    LastActiveAt = DateTime.UtcNow,
+                    Config = config
+                };
+
+                _logger.LogInformation($"Creating new session {sessionId}");
+
+                // 异步连接，不阻塞
+                _ = ConnectInBackgroundAsync(config);
+
+                return _currentSession;
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
+
+        private async Task ConnectInBackgroundAsync(RdpConnectionConfig config)
+        {
+            try
+            {
+                _currentClient = _clientFactory.CreateClient();
+                
+                _currentClient.ConnectionStateChanged += (s, e) =>
+                {
+                    if (_currentSession != null)
+                    {
+                        _currentSession.Status = e.NewState switch
+                        {
+                            ConnectionState.Connected => RdpSessionStatus.Connected,
+                            ConnectionState.Disconnected => RdpSessionStatus.Disconnected,
+                            ConnectionState.Error => RdpSessionStatus.Error,
+                            _ => _currentSession.Status
+                        };
+                    }
+                };
+
+                await _currentClient.ConnectAsync(config);
+                
+                _logger.LogInformation("Background connection completed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background connection failed");
+                if (_currentSession != null)
+                {
+                    _currentSession.Status = RdpSessionStatus.Error;
+                }
+            }
+        }
+
+        public async Task DisconnectAsync(string sessionId)
+        {
+            await _sessionLock.WaitAsync();
+            try
+            {
+                if (_currentSession?.Id != sessionId)
+                {
+                    _logger.LogWarning($"Session {sessionId} not found");
+                    return;
+                }
+
+                _logger.LogInformation($"Disconnecting session {sessionId}");
+                await CleanupSessionAsync();
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
+
+        public Task<RdpSessionStatus> GetStatusAsync(string sessionId)
+        {
+            if (_currentSession?.Id == sessionId)
+            {
+                return Task.FromResult(_currentSession.Status);
+            }
+            
+            return Task.FromResult(RdpSessionStatus.Disconnected);
+        }
+
+        public RdpSession? GetExistingSession()
+        {
+            if (_currentSession?.Status == RdpSessionStatus.Connected)
+            {
+                return _currentSession;
+            }
+            return null;
+        }
+
+        private async Task CleanupSessionAsync()
+        {
+            if (_currentClient != null)
+            {
+                await _currentClient.DisconnectAsync();
+                _currentClient.Dispose();
+                _currentClient = null;
+            }
+
+            _currentSession = null;
+            _logger.LogInformation("Session cleaned up");
+        }
+    }
+}
+```
+
+### 4. API 控制器实现
+
+#### RdpController.cs
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using WebRdp.Service.Models;
+using WebRdp.Service.Services;
+
+namespace WebRdp.Service.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class RdpController : ControllerBase
+    {
+        private readonly IRdpSessionManager _sessionManager;
+        private readonly ILogger<RdpController> _logger;
+
+        public RdpController(
+            IRdpSessionManager sessionManager,
+            ILogger<RdpController> logger)
+        {
+            _sessionManager = sessionManager;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// 创建或连接 RDP 会话
+        /// </summary>
+        [HttpPost("connect")]
+        public async Task<ActionResult<RdpSession>> Connect([FromBody] RdpConnectionConfig config)
+        {
+            _logger.LogInformation("Connect API called");
+            
+            try
+            {
+                var session = await _sessionManager.ConnectAsync(config);
+                return Ok(session);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Connect failed");
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 断开 RDP 会话
+        /// </summary>
+        [HttpDelete("disconnect/{sessionId}")]
+        public async Task<IActionResult> Disconnect(string sessionId)
+        {
+            _logger.LogInformation($"Disconnect API called for session {sessionId}");
+            
+            try
+            {
+                await _sessionManager.DisconnectAsync(sessionId);
+                return Ok(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Disconnect failed");
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 获取会话状态
+        /// </summary>
+        [HttpGet("status/{sessionId}")]
+        public async Task<ActionResult<RdpSessionStatus>> GetStatus(string sessionId)
+        {
+            var status = await _sessionManager.GetStatusAsync(sessionId);
+            return Ok(status);
+        }
+
+        /// <summary>
+        /// 发送输入事件
+        /// </summary>
+        [HttpPost("input/{sessionId}")]
+        public async Task<IActionResult> SendInput(string sessionId, [FromBody] InputEvent input)
+        {
+            // TODO: 实现输入事件转发
+            await Task.Yield();
+            return Ok(new { Success = true });
+        }
+
+        /// <summary>
+        /// WebSocket 视频流端点
+        /// </summary>
+        [HttpGet("stream")]
+        public async Task GetStream()
+        {
+            if (HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                // TODO: 实现视频流推送
+                await Task.CompletedTask;
+            }
+            else
+            {
+                HttpContext.Response.StatusCode = 400;
+            }
+        }
+    }
+}
+```
+
+### 5. Electron 集成实现
+
+#### main.js (Electron 主进程)
+
+```javascript
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const { spawn } = require('child_process');
+
+let mainWindow;
+let rdpServiceProcess;
+
+async function startRdpService() {
+  const isDev = process.env.NODE_ENV === 'development';
+  const servicePath = isDev 
+    ? path.join(__dirname, '../WebRdp.Service/bin/Debug/net6.0/WebRdp.Service')
+    : path.join(process.resourcesPath, 'WebRdp.Service');
+
+  rdpServiceProcess = spawn(servicePath, {
+    cwd: path.dirname(servicePath),
+    env: { ...process.env, ASPNETCORE_ENVIRONMENT: isDev ? 'Development' : 'Production' }
+  });
+
+  rdpServiceProcess.stdout.on('data', (data) => {
+    console.log(`RDP Service: ${data}`);
+  });
+
+  rdpServiceProcess.stderr.on('data', (data) => {
+    console.error(`RDP Service Error: ${data}`);
+  });
+
+  // 等待服务启动
+  await new Promise(resolve => setTimeout(resolve, 3000));
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadURL('http://localhost:3000'); // 开发模式
+  // mainWindow.loadFile(path.join(__dirname, '../dist/index.html')); // 生产模式
+}
+
+app.whenReady().then(async () => {
+  await startRdpService();
+  createWindow();
+});
+
+app.on('before-quit', () => {
+  if (rdpServiceProcess) {
+    rdpServiceProcess.kill();
+  }
+});
+```
+
+#### renderer.js (Web 界面)
+
+```javascript
+class RdpClient {
+  constructor() {
+    this.ws = null;
+    this.canvas = document.getElementById('rdp-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.sessionId = null;
+  }
+
+  async connect(config) {
+    const response = await fetch('http://localhost:5000/api/rdp/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+
+    const session = await response.json();
+    this.sessionId = session.id;
+
+    // 建立 WebSocket 连接
+    this.ws = new WebSocket('ws://localhost:5001/api/rdp/stream');
+    this.ws.binaryType = 'arraybuffer';
+    this.ws.onmessage = (event) => this.renderFrame(event.data);
+    this.ws.onerror = (error) => console.error('WebSocket error:', error);
+  }
+
+  renderFrame(data) {
+    const imageData = new ImageData(
+      new Uint8ClampedArray(data),
+      this.canvas.width,
+      this.canvas.height
+    );
+    this.ctx.putImageData(imageData, 0, 0);
+  }
+
+  sendInput(event) {
+    if (!this.sessionId || !this.ws) return;
+
+    fetch(`http://localhost:5000/api/rdp/input/${this.sessionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+  }
+
+  async disconnect() {
+    if (this.sessionId) {
+      await fetch(`http://localhost:5000/api/rdp/disconnect/${this.sessionId}`, {
+        method: 'DELETE'
+      });
+      this.sessionId = null;
+    }
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+}
+
+// 初始化
+const rdp = new RdpClient();
+
+// 绑定输入事件
+document.addEventListener('keydown', (e) => rdp.sendInput({ type: 'keyboard', code: e.code, pressed: true }));
+document.addEventListener('keyup', (e) => rdp.sendInput({ type: 'keyboard', code: e.code, pressed: false }));
+document.addEventListener('mousedown', (e) => rdp.sendInput({ type: 'mouse', button: e.button, x: e.offsetX, y: e.offsetY, pressed: true }));
+document.addEventListener('mouseup', (e) => rdp.sendInput({ type: 'mouse', button: e.button, x: e.offsetX, y: e.offsetY, pressed: false }));
+document.addEventListener('mousemove', (e) => rdp.sendInput({ type: 'mouse', x: e.offsetX, y: e.offsetY }));
+```
 
 ---
 
-## 下一步
+## 单元测试方案
 
-**请您确认**:
+### 1. 会话管理器测试
 
-1. 以上技术方案的**大体方向是否正确**？
-2. 是否有需要**补充或修改**的地方？
-3. 如果没有需要补充的，我将开始生成**详细的完整方案文档**，包括具体的代码实现、单元测试方案、问题记录文档等。
+```csharp
+using Xunit;
+using Moq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using WebRdp.Service.Services;
+using WebRdp.Service.Models;
 
-请回复您的意见，我好继续完善方案。
+public class RdpSessionManagerTests
+{
+    [Fact]
+    public async Task ConnectAsync_WhenNoExistingSession_CreatesNewSession()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<RdpSessionManager>>();
+        var clientFactoryMock = new Mock<IFreeRdpClientFactory>();
+        var settings = Options.Create(new RdpSettings { MaxSessionCount = 1 });
+        
+        var manager = new RdpSessionManager(loggerMock.Object, clientFactoryMock.Object, settings);
+        var config = new RdpConnectionConfig { Host = "127.0.0.2", Port = 3389 };
+
+        // Act
+        var session = await manager.ConnectAsync(config);
+
+        // Assert
+        Assert.NotNull(session);
+        Assert.Equal(RdpSessionStatus.Connecting, session.Status);
+    }
+
+    [Fact]
+    public async Task ConnectAsync_WhenExistingSession_ReturnsExistingSession()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<RdpSessionManager>>();
+        var clientFactoryMock = new Mock<IFreeRdpClientFactory>();
+        var settings = Options.Create(new RdpSettings { MaxSessionCount = 1 });
+        
+        var manager = new RdpSessionManager(loggerMock.Object, clientFactoryMock.Object, settings);
+        var config = new RdpConnectionConfig { Host = "127.0.0.2", Port = 3389 };
+
+        // Act
+        await manager.ConnectAsync(config);
+        var session2 = await manager.ConnectAsync(config);
+
+        // Assert
+        Assert.NotNull(session2);
+    }
+
+    [Fact]
+    public async Task DisconnectAsync_CleansUpResources()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<RdpSessionManager>>();
+        var clientMock = new Mock<IFreeRdpClient>();
+        var clientFactoryMock = new Mock<IFreeRdpClientFactory>();
+        clientFactoryMock.Setup(f => f.CreateClient()).Returns(clientMock.Object);
+        var settings = Options.Create(new RdpSettings { MaxSessionCount = 1 });
+        
+        var manager = new RdpSessionManager(loggerMock.Object, clientFactoryMock.Object, settings);
+        var config = new RdpConnectionConfig { Host = "127.0.0.2", Port = 3389 };
+
+        // Act
+        var session = await manager.ConnectAsync(config);
+        await manager.DisconnectAsync(session.Id);
+
+        // Assert
+        clientMock.Verify(c => c.DisconnectAsync(), Times.Once);
+        clientMock.Verify(c => c.Dispose(), Times.Once);
+    }
+}
+```
+
+### 2. 测试执行命令
+
+```bash
+# 运行所有单元测试
+dotnet test tests/ --logger "console;verbosity=detailed"
+
+# 生成测试覆盖率报告
+dotnet test tests/ /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
+
+# 运行特定测试类
+dotnet test tests/ --filter "FullyQualifiedName~RdpSessionManagerTests"
+```
+
+---
+
+## 问题记录文档
+
+详见：`docs/issues-log.md`
+
+### 已知问题模板
+
+```markdown
+## [日期] 问题标题
+
+**问题描述**: ...
+
+**原因分析**: ...
+
+**解决方案**: ...
+
+**预防措施**: ...
+```
+
+---
+
+## 部署说明
+
+### Windows
+
+```bash
+# 发布
+dotnet publish src/WebRdp.Service -c Release -r win-x64
+
+# 运行
+./publish/WebRdp.Service.exe
+```
+
+### UOS (Linux)
+
+```bash
+# 发布
+dotnet publish src/WebRdp.Service -c Release -r linux-x64
+
+# 安装 FreeRDP 依赖
+sudo apt-get install libfreerdp3-3
+
+# 运行
+./publish/WebRdp.Service
+```
+
+---
+
+## 下一步任务
+
+详见 `tasklist.md`

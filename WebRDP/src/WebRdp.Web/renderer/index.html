@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRDP - 远程桌面</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 16px 24px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #404040;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 18px; font-weight: 500; }
+    .controls { display: flex; gap: 12px; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: #0078d4; color: white; }
+    .btn-primary:hover { background: #106ebe; }
+    .btn-danger { background: #d32f2f; color: white; }
+    .btn-danger:hover { background: #b71c1c; }
+    .btn:disabled { background: #666; cursor: not-allowed; }
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #rdp-canvas {
+      max-width: 100%;
+      max-height: 100%;
+      background: #000;
+      border: 1px solid #404040;
+    }
+    .login-form {
+      background: #2d2d2d;
+      padding: 32px;
+      border-radius: 8px;
+      min-width: 400px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 14px;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #0078d4;
+    }
+    .status-bar {
+      padding: 8px 24px;
+      background: #2d2d2d;
+      border-top: 1px solid #404040;
+      font-size: 12px;
+      color: #999;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-indicator.connected { background: #4caf50; }
+    .status-indicator.disconnected { background: #f44336; }
+    .status-indicator.connecting { background: #ff9800; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>WebRDP 远程桌面</h1>
+    <div class="controls">
+      <button id="btn-connect" class="btn btn-primary">连接</button>
+      <button id="btn-disconnect" class="btn btn-danger" disabled>断开</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div id="login-form" class="login-form">
+      <div class="form-group">
+        <label for="host">主机地址</label>
+        <input type="text" id="host" value="127.0.0.2">
+      </div>
+      <div class="form-group">
+        <label for="port">端口</label>
+        <input type="number" id="port" value="3389">
+      </div>
+      <div class="form-group">
+        <label for="username">用户名</label>
+        <input type="text" id="username" placeholder="请输入用户名">
+      </div>
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input type="password" id="password" placeholder="请输入密码">
+      </div>
+      <button id="btn-login" class="btn btn-primary" style="width: 100%">连接</button>
+    </div>
+    <canvas id="rdp-canvas" style="display: none;"></canvas>
+  </div>
+
+  <div class="status-bar">
+    <span id="status-indicator" class="status-indicator disconnected"></span>
+    <span id="status-text">未连接</span>
+  </div>
+
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>

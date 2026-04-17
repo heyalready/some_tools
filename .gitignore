@@ -1,0 +1,1174 @@
+# Dependencies
+node_modules/
+packages/
+
+# Build artifacts
+obj/
+bin/
+Debug/
+Release/
+Build/
+dist/
+build/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage/
+htmlcov/
+.coverage
+
+# Package manager
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Compiled Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Translations
+*.mo
+*.pot
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Sage
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# .NET
+bin/
+obj/
+out/
+.vs/
+*.userprefs
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vsconfig
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
+
+# Visual Studio Code
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# Roslyn
+*.g.x.cs
+
+# StyleCop
+*.stylecop
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Linux
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Microsoft Office temporary files
+~$*
+
+# GDB
+*.gdb_history
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+
+# Configuration files
+*.config
+
+# Certificate store
+*.crt
+*.cert
+*.key
+
+# Secrets
+secrets.json
+secrets.yaml
+secrets.yml
+secrets.properties
+secrets.txt
+secret.json
+secret.yaml
+secret.yml
+secret.properties
+secret.txt
+credentials.json
+credentials.yaml
+credentials.yml
+credentials.properties
+credentials.txt
+credential.json
+credential.yaml
+credential.yml
+credential.properties
+credential.txt
+config/secrets.json
+config/secrets.yaml
+config/secrets.yml
+config/secrets.properties
+config/secrets.txt
+config/secret.json
+config/secret.yaml
+config/secret.yml
+config/secret.properties
+config/secret.txt
+config/credentials.json
+config/credentials.yaml
+config/credentials.yml
+config/credentials.properties
+config/credentials.txt
+config/credential.json
+config/credential.yaml
+config/credential.yml
+config/credential.properties
+config/credential.txt
+
+# Cache
+.cache/
+*.cache
+*.cached
+
+# Lock files
+*.lock
+package-lock.json
+yarn.lock
+
+# Coverage reports
+coverage/
+*.lcov
+*.info
+
+# Documentation
+docs/_build/
+docs/build/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Images (do not ignore)
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+# *.bmp
+# *.svg
+# *.ico
+# *.tiff
+# *.tif
+# *.webp
+# *.avif
+# *.apng
+
+# Videos (do not ignore)
+# *.mp4
+# *.avi
+# *.mov
+# *.wmv
+# *.flv
+# *.mkv
+# *.webm
+# *.m4v
+# *.3gp
+# *.3g2
+# *.mpg
+# *.mpeg
+# *.m2v
+# *.m4v
+# *.f4v
+# *.f4p
+# *.f4a
+# *.f4b
+
+# Audio (do not ignore)
+# *.mp3
+# *.wav
+# *.flac
+# *.aac
+# *.ogg
+# *.wma
+# *.m4a
+# *.opus
+
+# Archives (do not ignore)
+# *.zip
+# *.rar
+# *.7z
+# *.tar
+# *.gz
+# *.bz2
+# *.xz
+# *.tgz
+# *.tbz2
+# *.txz
+
+# Fonts (do not ignore)
+# *.ttf
+# *.otf
+# *.woff
+# *.woff2
+# *.eot
+# *.pfa
+# *.pfb
+# *.sfd
+
+# Executables
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.obj
+*.o
+*.out
+*.app
+*.bin
+*.jar
+*.war
+*.ear
+*.apk
+*.aab
+*.msi
+*.deb
+*.rpm
+*.pkg
+*.dmg
+*.iso
+*.img
+*.toast
+*.vcd
+
+# Compression
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2
+*.xz
+*.tgz
+*.tbz2
+*.txz
+*.z
+*.Z
+*.lz
+*.lzma
+*.lzo
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.zst
+
+# Testing
+*.test
+*.tests
+test/
+tests/
+spec/
+
+# CI/CD
+.github/
+.gitlab/
+.travis.yml
+.circleci/
+.jenkins
+.drone.yml
+.shippable.yml
+.codeship-services.yml
+.codeship-steps.yml
+.teamcity/
+
+# Docker
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+docker-compose*.json
+
+# Kubernetes
+kustomization.yaml
+
+# Ansible
+*.retry
+
+# Terraform
+*.tfstate
+*.tfvars
+.terraform/
+.terragrunt-cache/
+
+# Vagrant
+.vagrant/
+vagrant-*.out
+vagrant-*.err
+
+# Virtualenv
+venv/
+ENV/
+env/
+.venv/
+.env/
+
+# Conda
+.conda/
+.condarc
+.conda-meta/
+
+# Poetry
+poetry.lock
+__pypackages__/
+
+# Pipenv
+Pipfile.lock
+
+# npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+yarn.lock
+.npm
+.npmrc
+
+# Bower
+bower_components/
+
+# Grunt
+.grunt/
+
+# gulp
+.gulp/
+gulp-cache/
+
+# jspm
+jspm_packages/
+
+# SASS/SCSS
+.sass-cache/
+.scss-cache/
+.css.map
+
+# Babel
+.babelrc
+.babelrc.js
+.babel.config.js
+.babel.config.json
+
+# ESLint
+.eslintcache
+.eslintignore
+
+# Prettier
+.prettierrc
+.prettierignore
+
+# Jest
+.jest/
+coverage/
+
+# Mocha
+.mocha.opts
+
+# Webpack
+webpack.config.js
+webpack.config.babel.js
+.webpackrc
+.webpackrc.js
+.webpackrc.json
+.webpackrc.yaml
+.webpackrc.yml
+
+# Browserify
+.browserify/
+
+# TypeScript
+*.tsbuildinfo
+*.tsx
+*.ts
+.tsx
+.ts
+
+# React
+*.jsx
+.jsx
+
+# Vue
+*.vue
+.vue
+
+# Angular
+*.ngfactory.ts
+*.ngsummary.json
+
+# Elm
+elm-stuff/
+*.elmo
+
+# CoffeeScript
+*.coffee
+*.litcoffee
+*.coffee.md
+
+# Go
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.obj
+*.o
+*.out
+*.app
+*.bin
+*.jar
+*.war
+*.ear
+*.apk
+*.aab
+*.msi
+*.deb
+*.rpm
+*.pkg
+*.dmg
+*.iso
+*.img
+*.toast
+*.vcd
+bin/
+pkg/
+vendor/
+
+# Rust
+Cargo.lock
+target/
+*.rlib
+*.so
+*.dylib
+*.dSYM
+*.dll
+*.exe
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.jpi
+*.hpi
+target/
+build/
+.gradle/
+.gradle
+!gradlew
+!gradlew.bat
+!gradle-wrapper.jar
+
+# Kotlin
+*.class
+*.jar
+*.war
+*.ear
+*.kotlin_metadata
+*.kotlin_builtins
+target/
+build/
+.gradle/
+.gradle
+!gradlew
+!gradlew.bat
+!gradle-wrapper.jar
+
+# Scala
+*.class
+*.jar
+*.war
+*.ear
+*.scala_dependencies
+*.lock
+*.sbt
+target/
+build/
+project/target/
+project/project/target/
+
+# PHP
+*.phar
+vendor/
+composer.lock
+
+# Ruby
+*.gem
+*.rbc
+.bundle/
+vendor/bundle/
+vendor/cache/
+vendor/gems/
+vendor/ruby/
+.ruby-version
+.rbenv-gemsets
+.rbenv-vars
+.rbenv-version
+.rbenv-default-gems
+.rbenv-hooks/
+.rbenv-plugins/
+rbenv.d/
+rbenv.d/**
+Gemfile.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pydevproject
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.hypothesis/
+.pyre/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# C#
+*.sln
+*.csproj
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.svclog
+*.aps
+*.ncb
+*.obj
+*.log
+*.pch
+*.pdb
+*.ipch
+*.iobj
+*.ilk
+*.manifest
+*.res
+*.rsp
+*.rej
+*.pidb
+*.sbr
+*.tlb
+*.tlh
+*.tmp
+*.rsp
+*.pgc
+*.pgd
+*.metagen
+*.vcxproj.filters
+*.VC.db
+*.VC.VC.opendb
+*.aps
+*.vcp
+*.vcr
+*.vcproj
+*.vsw
+*.vssscc
+*.vstemplate
+*.vshost.exe
+*.vshost.exe.manifest
+*.vshost.pdb
+*.cache
+*.gpState
+*.VC.opendb
+*.opensdf
+*.sdf
+*.pidb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+.vs/
+bin/
+obj/
+out/
+AppPackages/
+BundleArtifacts/
+*.nupkg
+*.nuspec
+packages/
+TestResults/
+.stylecop
+.analyzers
+coverage.cobertura.xml
+*.VC.db
+*.VC.VC.opendb
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# C++
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.obj
+*.ilk
+*.pdb
+*.lib
+*.suo
+*.sdf
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.pidb
+*.sbr
+*.tlb
+*.tlh
+*.tmp
+*.rsp
+*.pgc
+*.pgd
+*.metagen
+*.vcxproj.filters
+*.VC.db
+*.VC.VC.opendb
+*.aps
+*.vcp
+*.vcr
+*.vcproj
+*.vsw
+*.vssscc
+*.vstemplate
+*.vcxproj.user
+*.vcxproj.User
+*.vcxproj.userosscache
+*.vcxproj.suo
+*.vcxproj.pdb
+*.vcxproj.idb
+*.vcxproj.log
+*.vcxproj.iobj
+*.vcxproj.ipdb
+*.vcxproj.tlog
+*.vcxproj.lastbuildstate
+*.vcxproj.unsuccessfulbuild
+*.vcxproj.Build.CppClean.log
+*.vcxproj.CoreCppClean.log
+*.vcxproj.FileListAbsolute.txt
+*.vcxproj.intermediate.manifest
+*.vcxproj.CopyComplete
+*.vcxproj.managedsourcedependency
+*.vcxproj.managedresource.dependency
+*.vcxproj.StaticAnalysis.log
+*.vcxproj.CodeAnalysisResult
+*.vcxproj.nativecodeanalysis.xml
+*.vcxproj.codedefects
+*.vcxproj.PermCheck.log
+*.vcxproj.MATestLog.xml
+*.vcxproj.AspnetCompiler.dat
+*.vcxproj.WebTestResultsSummary.xml
+*.vcxproj.CodeCoverageResults
+*.vcxproj.DynamicCodeAnalysis.log
+*.vcxproj.DynamicCodeAnalysisResults
+*.vcxproj.DynamicCodeAnalysis.xml
+*.vcxproj.DynamicCodeAnalysis.codecoverage
+*.vcxproj.NativeCodeAnalysis.log
+*.vcxproj.NativeCodeAnalysisResults
+*.vcxproj.NativeCodeAnalysis.xml
+*.vcxproj.NativeCodeAnalysis.codecoverage
+*.vcxproj.STAEXEAnalysis.log
+*.vcxproj.STAEXEAnalysisResults
+*.vcxproj.STAEXEAnalysis.xml
+*.vcxproj.STAEXEAnalysis.codecoverage
+*.vcxproj.STAEXEAnalysis.coverage
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+
+# C
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.obj
+*.ilk
+*.pdb
+*.lib
+*.suo
+*.sdf
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.pidb
+*.sbr
+*.tlb
+*.tlh
+*.tmp
+*.rsp
+*.pgc
+*.pgd
+*.metagen
+*.vcxproj.filters
+*.VC.db
+*.VC.VC.opendb
+*.aps
+*.vcp
+*.vcr
+*.vcproj
+*.vsw
+*.vssscc
+*.vstemplate
+*.vcxproj.user
+*.vcxproj.User
+*.vcxproj.userosscache
+*.vcxproj.suo
+*.vcxproj.pdb
+*.vcxproj.idb
+*.vcxproj.log
+*.vcxproj.iobj
+*.vcxproj.ipdb
+*.vcxproj.tlog
+*.vcxproj.lastbuildstate
+*.vcxproj.unsuccessfulbuild
+*.vcxproj.Build.CppClean.log
+*.vcxproj.CoreCppClean.log
+*.vcxproj.FileListAbsolute.txt
+*.vcxproj.intermediate.manifest
+*.vcxproj.CopyComplete
+*.vcxproj.managedsourcedependency
+*.vcxproj.managedresource.dependency
+*.vcxproj.StaticAnalysis.log
+*.vcxproj.CodeAnalysisResult
+*.vcxproj.nativecodeanalysis.xml
+*.vcxproj.codedefects
+*.vcxproj.PermCheck.log
+*.vcxproj.MATestLog.xml
+*.vcxproj.CodeCoverageResults
+*.vcxproj.DynamicCodeAnalysis.log
+*.vcxproj.DynamicCodeAnalysisResults
+*.vcxproj.DynamicCodeAnalysis.xml
+*.vcxproj.DynamicCodeAnalysis.codecoverage
+*.vcxproj.NativeCodeAnalysis.log
+*.vcxproj.NativeCodeAnalysisResults
+*.vcxproj.NativeCodeAnalysis.xml
+*.vcxproj.NativeCodeAnalysis.codecoverage
+*.vcxproj.STAEXEAnalysis.log
+*.vcxproj.STAEXEAnalysisResults
+*.vcxproj.STAEXEAnalysis.xml
+*.vcxproj.STAEXEAnalysis.codecoverage
+*.vcxproj.STAEXEAnalysis.coverage
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+*.vcxproj.STAEXEAnalysis.coverage.xml
+*.vcxproj.STAEXEAnalysis.coverage.info
+*.vcxproj.STAEXEAnalysis.coverage.html
+*.vcxproj.STAEXEAnalysis.coverage.lcov
+
+# F#
+*.fsproj
+*.fsx
+*.fsscript
+*.fsi
+*.fsi.sig
+*.exe
+*.dll
+*.pdb
+*.mdb
+*.exe.config
+*.userprefs
+*.userosscache
+*.suo
+*.user
+*.aps
+.ncrunchsolution
+.ncrunchproject
+.ncrunchsolution
+.ncrunchproject
+.ncrunchexclude
+.nunit
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe.config
+.nunit-console.exe.config
+.nunit-agent.exe.config
+.nunit-agent-x86.exe.config
+.nunit.engine.api.dll.config
+.nunit.engine.dll.config
+.nunit.v2.dll.config
+.nunit.framework.dll.config
+.nunit.core.dll.config
+.nunit.core.interfaces.dll.config
+.nunit.util.dll.config
+.nunit.mocks.dll.config
+.nunit.extensions.dll.config
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe.config
+.nunit-console.exe.config
+.nunit-agent.exe.config
+.nunit-agent-x86.exe.config
+.nunit.engine.api.dll.config
+.nunit.engine.dll.config
+.nunit.v2.dll.config
+.nunit.framework.dll.config
+.nunit.core.dll.config
+.nunit.core.interfaces.dll.config
+.nunit.util.dll.config
+.nunit.mocks.dll.config
+.nunit.extensions.dll.config
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.nunit-agent-x86.exe
+.nunit.engine.api.dll
+.nunit.engine.dll
+.nunit.v2.dll
+.nunit.framework.dll
+.nunit.core.dll
+.nunit.core.interfaces.dll
+.nunit.util.dll
+.nunit.mocks.dll
+.nunit.extensions.dll
+.nunit.addins
+.nunit-gui.addins
+.nunit-console.addins
+.nunit-gui.exe
+.nunit-console.exe
+.nunit-agent.exe
+.n...... (truncated due to length)
